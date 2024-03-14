@@ -18,11 +18,22 @@ void shuffle(int t[], int size)
         t[k] = swapper;
     }
 }
+void printHand(int hand[], int index, int len)
+{
+    for (int i = 0; i < len; ++i)
+    {
+        printf("%d, ", hand[(index+i)%NUMBER_OF_CARDS]);
+    }
+    printf("\n");
+}
 void game(int n, int player_A[], int player_B[], int max_conflicts, int simplified_mode)
 {
     int conflictCount = 0;
     int p1Index = 0, p1CardCount = NUMBER_OF_CARDS/2;
     int p2Index = 0, p2CardCount = NUMBER_OF_CARDS/2;
+
+    printHand(player_A, p1Index, p1CardCount);
+    printHand(player_B, p2Index, p2CardCount);
 
     while(conflictCount < max_conflicts && p1CardCount > 0 && p2CardCount > 0)
     {
@@ -55,7 +66,7 @@ void game(int n, int player_A[], int player_B[], int max_conflicts, int simplifi
             {
                 //Przenosi karty gracza A i B na koniec swojej ręki
                 player_A[(p1Index+p1CardCount)%NUMBER_OF_CARDS] = player_A[p1Index%NUMBER_OF_CARDS];
-                p2Index++;
+                p1Index++;
                 player_B[(p2Index+p2CardCount)%NUMBER_OF_CARDS] = player_B[p2Index%NUMBER_OF_CARDS];
                 p2Index++;
                 conflictCount++;
@@ -81,8 +92,8 @@ void game(int n, int player_A[], int player_B[], int max_conflicts, int simplifi
                     p1CardCount-=2;
                     p2Index+=2;
                     p2CardCount-=2;
-                    card1 = player_A[p1Index%NUMBER_OF_CARDS]/NUMBER_OF_COLORS;
-                    card2 = player_B[p2Index%NUMBER_OF_CARDS]/NUMBER_OF_COLORS;
+                    card1 = (int)(player_A[p1Index%NUMBER_OF_CARDS]/NUMBER_OF_COLORS);
+                    card2 = (int)(player_B[p2Index%NUMBER_OF_CARDS]/NUMBER_OF_COLORS);
                 }
                 if(card1 > card2)
                 {
@@ -122,8 +133,11 @@ void game(int n, int player_A[], int player_B[], int max_conflicts, int simplifi
                 }
             }
         }
+        printHand(player_A, p1Index, p1CardCount);
+        printHand(player_B, p2Index, p2CardCount);
+        printf("%d\n", conflictCount);
     }
-    if(conflictCount > max_conflicts)
+    if(conflictCount == max_conflicts)
     {
         printf("0 %d %d\n", p1CardCount, p2CardCount);
         return;
@@ -142,14 +156,6 @@ void game(int n, int player_A[], int player_B[], int max_conflicts, int simplifi
         return;
     }
 
-}
-void printHand(int hand[])
-{
-    for (int i = 0; i < NUMBER_OF_CARDS/2; ++i)
-    {
-        printf("%d, ", hand[i]);
-    }
-    printf("\n");
 }
 int main(void) {
     int player_A[NUMBER_OF_CARDS], player_B[NUMBER_OF_CARDS];
