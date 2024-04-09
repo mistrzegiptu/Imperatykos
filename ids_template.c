@@ -27,7 +27,31 @@ const char *keywords[] = {
 	"unsigned", "void", "volatile", "while"
 };
 
-int find_idents() {
+int find_idents()
+{
+    char c = fgetc(stdin);
+    int flag = 0;
+
+    while(c != EOF)
+    {
+        if(flag = 0)
+        {
+           if(c == '/')
+           {
+               c = fgetc(stdin);
+               if(c == '/')
+                   flag = IN_LINE_COMMENT;
+               else if(c == '*')
+                   flag = IN_BLOCK_COMMENT;
+           }
+        }
+        else if(flag == IN_LINE_COMMENT)
+        {
+            if(c == '\n')
+                flag = 0;
+        }
+        else if(flag == IN_BLOCK_COMMENT)
+    }
 }
 
 int cmp(const void* first_arg, const void* second_arg) {

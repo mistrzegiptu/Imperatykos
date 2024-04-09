@@ -44,18 +44,22 @@ void wc(int *nl, int *nw, int *nc)
     (*nl) = 0;
     (*nw) = 0;
     (*nc) = 0;
+    int flag = 0;
 
     char c = fgetc(stdin);
 
     while(c != EOF)
     {
         if(c == NEWLINE)
-        {
             (*nl) += 1;
+        if(flag == 0 && c >= FIRST_CHAR && c <= LAST_CHAR)
+        {
+            flag = 1;
             (*nw) += 1;
         }
-        if(c == ' ' || c == '\t')
-            (*nw) += 1;
+        if(flag == IN_WORD && (c == '\t' || c == ' ' || c == '\n'))
+            flag = 0;
+
         (*nc) += 1;
         c = fgetc(stdin);
     }
@@ -69,15 +73,15 @@ void char_count(int char_no, int *n_char, int *cnt)
     char c = fgetc(stdin);
     while(c != EOF)
     {
-        if(c >= FIRST_CHAR && c < LAST_CHAR)
+        if(c >= FIRST_CHAR && c <= LAST_CHAR)
         {
             count[(c - FIRST_CHAR)] += 1;
         }
         c = fgetc(stdin);
     }
     qsort(charTab, MAX_CHARS, sizeof(char), cmp);
-    (*n_char) = charTab[0];
-    (*cnt) = count[charTab[0]-FIRST_CHAR];
+    (*n_char) = charTab[char_no-1];
+    (*cnt) = count[(*n_char)-FIRST_CHAR];
 }
 
 void bigram_count(int bigram_no, int bigram[])
@@ -100,10 +104,10 @@ void bigram_count(int bigram_no, int bigram[])
     }
     qsort(bigrams, MAX_BIGRAMS, sizeof(int), cmp_di);
 
-    int result = bigrams[0];
+    int result = bigrams[bigram_no-1];
     bigram[0] = result / MAX_CHARS + FIRST_CHAR;
     bigram[1] = result % MAX_CHARS + FIRST_CHAR;
-    bigram[2] = count[bigrams[0]];
+    bigram[2] = count[bigrams[bigram_no-1]];
 }
 
 void find_comments(int *line_comment_counter, int *block_comment_counter)
@@ -112,28 +116,39 @@ void find_comments(int *line_comment_counter, int *block_comment_counter)
     (*block_comment_counter) = 0;
     char c = fgetc(stdin);
     char nextc = fgetc(stdin);
+    int flag = 0;
 
     while(nextc != EOF)
     {
-        if(c == '/' && nextc == '*')
+        if(flag == 0)
         {
-            (*block_comment_counter)++;
-            while(c != '*' && nextc != '/')
+            if(c == '/' && nextc == '/')
+            {
+                flag = IN_LINE_COMMENT;
+                (*line_comment_counter) += 1;
+            }
+            else if(c == '/' && nextc == '*')
+            {
+                flag = IN_BLOCK_COMMENT;
+                (*block_comment_counter) += 1;
+            }
+            if(flag != 0)
             {
                 c = nextc;
                 nextc = fgetc(stdin);
             }
         }
-        else if(c == '/' && nextc == '/')
+        else if(flag == IN_LINE_COMMENT)
         {
-            (*line_comment_counter)++;
-            while(nextc != '\n')
-            {
-                c = nextc;
-                nextc = fgetc(stdin);
-            }
-        }
+            if(c == NEWLINE || nextc == NEWLINE)
+                flag = 0;
 
+        }
+        else if(flag == IN_BLOCK_COMMENT)
+        {
+            if(c == '*' && nextc == '/')
+                flag = 0;
+        }
         c = nextc;
         nextc = fgetc(stdin);
     }
