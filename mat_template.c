@@ -84,13 +84,156 @@ void backward_substitution_index(double A[][SIZE], const int indices[], double x
 // swapping the rows use index vector - do not copy entire rows.)
 // If max A[i][i] < eps, function returns 0.
 // If det != 0 && b != NULL && x != NULL then vector x should contain solution of Ax = b.
+void swapIndexes(int *indexes, int i, int j)
+{
+    int swapper = indexes[i];
+    indexes[i] = indexes[j];
+    indexes[j] = swapper;
+}
+double gauss(double A[][SIZE], double b[], double x[], const int n, const double eps)
+{
+    int indexes[n];
+    int sign = 1;
 
-double gauss(double A[][SIZE], const double b[], double x[], const int n, const double eps) {
+    for(int i = 0; i < n; i++)
+    {
+        indexes[i] = i;
+        x[i] = 0;
+    }
+
+    for(int i = 0; i < n; i++)
+    {
+        double maxElement = A[indexes[i]][i];
+        int maxIndex = i;
+        for (int j = i+1; j < n; j++)
+        {
+            if(fabs(A[indexes[j]][i]) > maxElement)
+            {
+                maxElement = fabs(A[indexes[j]][i]);
+                maxIndex = j;
+            }
+        }
+        if(maxIndex != i)
+        {
+            swapIndexes(indexes, i, maxIndex);
+            sign = -sign;
+        }
+
+        for (int j = i+1; j < n; j++)
+        {
+            double ratio = A[indexes[j]][i] / A[indexes[i]][i];
+            b[indexes[j]] -= ratio * b[indexes[i]];
+            for (int k = 0; k < n; k++)
+                A[indexes[j]][k] -= ratio * A[indexes[i]][k];
+        }
+
+        if(fabs(A[indexes[i]][i]) < eps)
+            return 0;
+    }
+
+    double detW = 1.0*(double)sign;
+    for (int i = 0; i < n; i++)
+        detW *= A[indexes[i]][i];
+
+    if(detW == 0.0)
+        return 0;
+
+    for(int i = n-1; i >= 0; i--)
+    {
+        double result = b[indexes[i]];
+
+        for (int j = i+1; j < n; j++)
+            result -= x[j] * A[indexes[i]][j];
+
+        x[i] = result / A[indexes[i]][i];
+    }
+
+    return detW;
 }
 
 // 4. Returns the determinant; B contains the inverse of A (if det(A) != 0)
 // If max A[i][i] < eps, function returns 0.
-double matrix_inv(double A[][SIZE], double B[][SIZE], int n, double eps) {
+double matrix_inv(double A[][SIZE], double B[][SIZE], int n, double eps)
+{
+    int indexes[n];
+    int sign = 1;
+    double inverse[SIZE][SIZE] = {0};
+
+    for(int i = 0; i < n; i++)
+    {
+        indexes[i] = i;
+        inverse[i][i] = 1.0;
+    }
+
+    for(int i = 0; i < n; i++)
+    {
+        double maxElement = A[indexes[i]][i];
+        int maxIndex = i;
+        for (int j = i+1; j < n; j++)
+        {
+            if(fabs(A[indexes[j]][i]) > maxElement)
+            {
+                maxElement = fabs(A[indexes[j]][i]);
+                maxIndex = j;
+            }
+        }
+        if(maxIndex != i)
+        {
+            swapIndexes(indexes, i, maxIndex);
+            sign = -sign;
+        }
+
+        for (int j = i+1; j < n; j++)
+        {
+            double ratio = A[indexes[j]][i] / A[indexes[i]][i];
+
+            for (int k = 0; k < n; k++)
+            {
+                A[indexes[j]][k] -= ratio * A[indexes[i]][k];
+                inverse[indexes[j]][k] -= ratio * inverse[indexes[i]][k];
+            }
+        }
+
+        if(fabs(A[indexes[i]][i]) < eps)
+            return 0;
+    }
+
+    double det = 1.0 * (double)sign;
+    for(int i = 0; i < n; i++)
+    {
+        det *= A[indexes[i]][i];
+    }
+
+    for(int i = n-1; i >= 0; i--)
+    {
+        for(int j = i-1; j >= 0; j--)
+        {
+            double ratio = A[indexes[j]][i] / A[indexes[i]][i];
+            A[indexes[j]][i] = 0.0;
+            for (int k = 0; k < n; k++)
+            {
+                inverse[indexes[j]][k] -= ratio * inverse[indexes[i]][k];
+            }
+        }
+    }
+
+    for(int i = 0; i < n; i++)
+    {
+        double ratio = A[indexes[i]][i];
+        A[indexes[i]][i] = 1.0;
+        for (int j = 0; j < n; j++)
+        {
+            inverse[indexes[i]][j] /= ratio;
+        }
+    }
+
+    for(int i = 0; i < n; i++)
+    {
+        for(int j = 0; j < n; j++)
+            B[i][j] = inverse[indexes[i]][j];
+    }
+
+    return det;
 }
 
 int main(void) {
