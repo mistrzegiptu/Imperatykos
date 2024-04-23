@@ -104,11 +104,23 @@ double quad_select(int fun_no, int quad_no, double a, double b, int n)
 }
 
 // adaptive algorithm
-double recurs(Func1vFp f, double a, double b, double S, double delta, QuadratureFp quad, int level) {
+double recurs(Func1vFp f, double a, double b, double S, double delta, QuadratureFp quad, int level)
+{
+    if(level > RECURS_LEVEL_MAX)
+        return NAN;
+    double c = (a+b)/2;
+    double left = quad(f, a, c, 1);
+    double right = quad(f, c, b, 1);
+    if(fabs((left+right) - S) <= delta)
+        return left+right;
+    else
+        return recurs(f, a, c, left, delta/2, quad, level+1) + recurs(f, c, b, right, delta/2, quad, level+1);
 }
 
 // initialization for adaptive algorithm
-double init_recurs(Func1vFp f, double a, double b, double delta, QuadratureFp quad) {
+double init_recurs(Func1vFp f, double a, double b, double delta, QuadratureFp quad)
+{
+    return recurs(f, a, b, quad(f, a, b, 1), delta, quad, 0);
 }
 
 // double integrals
@@ -116,32 +128,87 @@ double init_recurs(Func1vFp f, double a, double b, double delta, QuadratureFp qu
 // pointer to function of two variables
 typedef double Func2vFp (double, double);
 
-double func2v_2(double x, double y) {
+double func2v_2(double x, double y)
+{
 	return 2 - x*x - y*y*y;
 }
 
 // sample functions to define the normal domain
 
-double lower_bound2(double x) {
+double lower_bound2(double x)
+{
 	return 0.7*exp(-2*x*x);
 }
-double upper_bound2(double x) {
+double upper_bound2(double x)
+{
 	return sin(10*x);
 }
 
 // rectangle rule (leftpoint) - double integral over rectangular domain
-double dbl_integr(Func2vFp f, double x1, double x2, int nx, double y1, double y2, int ny) {
+double dbl_integr(Func2vFp f, double x1, double x2, int nx, double y1, double y2, int ny)
+{
+    double dx = (x2-x1)/(double)nx;
+    double dy = (y2-y1)/(double)ny;
+    double result = 0.0;
+
+    for (int i = 0; i < nx; i++)
+    {
+        for(int j = 0; j < ny; j++)
+        {
+            result += f(x1 + dx*i, y1 + dy*j);
+        }
+    }
+
+    return result*dx*dy;
 }
 
 // rectangle rule (midpoint) - double integral over normal domain with respect to the x-axis
-double dbl_integr_normal_1(Func2vFp f, double x1, double x2, int nx, double hy,
-						   Func1vFp fg, Func1vFp fh) {
+double dbl_integr_normal_1(Func2vFp f, double x1, double x2, int nx, double hy, Func1vFp fg, Func1vFp fh)
+{
+    double dx = (x2-x1)/(double)nx;
+    double result = 0.0;
+
+    for(int i = 0; i < nx; i++)
+    {
+        double start = fg(x1 + dx*i + 0.5*dx);
+        double end = fh(x1 + dx*i + 0.5*dx);
+        int ny = (int)(ceil((end-start)/hy));
+        double dy = (end-start)/(double)ny;
+
+        for(int j = 0; j < ny; j++)
+        {
+            result += f(x1 + dx*i + 0.5*dx, start + dy*j + 0.5*dy) * dy * dx;
+        }
+    }
+
+    return result;
 }
 
 // rectangle rule (leftpoint) - double integral over multiple normal
 // domains with respect to the x-axis
-double dbl_integr_normal_n(Func2vFp f, double x1, double x2, int nx, double y1, double y2,
-		int ny, Func1vFp fg, Func1vFp fh)  {
+double dbl_integr_normal_n(Func2vFp f, double x1, double x2, int nx, double y1, double y2, int ny, Func1vFp fg, Func1vFp fh)
+{
+    double dx = (x2-x1)/(double)nx;
+    double _dy = (y2-y1)/(double)ny;
+    double result = 0.0;
+
+    for(int i = 0; i < nx; i++)
+    {
+        double xi = x1 + dx*i;
+        double lower = fmax(y1, fg(xi));
+        double upper = fmin(y2, fh(xi));
+        int hy = (int)(ceil((upper-lower)/_dy));
+        double dy = (upper-lower)/(double)hy;
+
+        for(int j = 0; j < hy; j++)
+        {
+            double yi = lower + dy*j;
+            if(fg(xi) <= yi && yi <= fh(xi))
+                result += f(xi, yi)*dx*dy;
+        }
+    }
+
+    return result;
 }
 
 // multiple quadratures
@@ -150,18 +217,46 @@ typedef double (*FuncNvFp)(const double*, int);
 typedef int (*BoundNvFp)(const double*, int);
 
 // sample function of three variables
-double func3v(const double v[], int n) {
+double func3v(const double v[], int n)
+{
 	return v[0] - v[1] + 2*v[2];
 }
 
 // sample predicate in 3D
-int bound3v(const double v[], int n) { // a cylinder
+int bound3v(const double v[], int n)
+{
 	return v[0] > 0 && v[0] < 0.5 && v[1]*v[1] + (v[2]-1)*(v[2]-1) < 1;
 }
 
 // multiple integrals over a cuboid with predicate (if boundary != NULL)
 // rectangular rule (rightpoint)
-double trpl_quad_rect(FuncNvFp f, double variable_lim[][2], const int tn[], BoundNvFp boundary) {
+double trpl_quad_rect(FuncNvFp f, double variable_lim[][2], const int tn[], BoundNvFp boundary)
+{
+    double dx = (variable_lim[0][1] - variable_lim[0][0])/(double)tn[0];
+    double dy = (variable_lim[1][1] - variable_lim[1][0])/(double)tn[1];
+    double dz = (variable_lim[2][1] - variable_lim[2][0])/(double)tn[2];
+    double result = 0.0;
+
+    double xi = variable_lim[0][0];
+    for(int i = 0; i < tn[0]; i++)
+    {
+        xi += dx;
+        double yi = variable_lim[1][0];
+        for(int j = 0; j < tn[1]; j++)
+        {
+            yi += dy;
+            double zi = variable_lim[2][0];
+            for(int k = 0; k < tn[2]; k++)
+            {
+                zi += dz;
+                double point[3] = {xi, yi, zi};
+                if((boundary != NULL && boundary(point, 3) != 0) || boundary == NULL)
+                    result += f(point, 3)*dx*dy*dz;
+            }
+        }
+    }
+
+    return result;
 }
 
 int main(void) {
