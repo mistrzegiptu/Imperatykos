@@ -65,10 +65,15 @@ int read_ints_from_line(char* c_buf, int *int_buf)
 {
     return 0;
 }
-
+void fill_int_array(int *array, int n, int value)
+{
+    for(int i = 0; i < n; i++)
+        array[i] = value;
+}
 int read_int_lines_cont(int* ptr_array[])
 {
     int *line = malloc(sizeof(int) * TAB_SIZE);
+    fill_int_array(line, TAB_SIZE, INT_MAX);
     int i = 0, j = 0, value = 0;
     char c = fgetc(stdin);
 
@@ -79,7 +84,9 @@ int read_int_lines_cont(int* ptr_array[])
             line[j] = value;
             ptr_array[i] = line;
             line = malloc(sizeof(int) * TAB_SIZE);
+            fill_int_array(line, TAB_SIZE, INT_MAX);
             i++;
+            j = 0;
             value = 0;
         }
         if(c >= '0' && c <= '9')
@@ -102,7 +109,7 @@ void write_int_line_cont(int *ptr_array[], int n)
 {
     for(int i = 0; i < TAB_SIZE; i++)
     {
-        if(ptr_array[n][i] == 0)
+        if(ptr_array[n][i] == INT_MAX)
             return;
         printf("%d ", ptr_array[n][i]);
     }
@@ -113,17 +120,42 @@ void write_int_line_cont(int *ptr_array[], int n)
 
 int read_char_lines(char *array[])
 {
-    return 0;
+    char *line = calloc(sizeof(char ) * TAB_SIZE, sizeof(char));
+    int i = 0, j = 0, value = 0;
+    char c = fgetc(stdin);
+
+    while(c != EOF)
+    {
+        if(c == '\n')
+        {
+            line[j] = value;
+            array[i] = line;
+            line = calloc(sizeof(char) * TAB_SIZE, sizeof(char));
+            i++;
+            j = 0;
+        }
+        line[j] = c;
+        j++;
+        c = fgetc(stdin);
+    }
+
+    return i;
 }
 
 void write_char_line(char *array[], int n)
 {
-
+    for(int i = 0; i < TAB_SIZE; i++)
+    {
+        if(array[n][i] == '\0')
+            return;
+        printf("%c", array[n][i]);
+    }
 }
 
-void delete_lines(char *array[])
+void delete_lines(char *array[], int n)
 {
-
+    for(int i = 0; i < n; i++)
+        free(array[i]);
 }
 
 // 4
@@ -215,20 +247,22 @@ int main(void) {
 			read_mat(rowsB, colsB, B);
 			prod_mat(rowsA, colsA, colsB, A, B, AB);
 			print_mat(rowsA, colsB, AB);
-            print_mat(rowsA, colsA, A);
-            print_mat(rowsB, colsB, B);
+            //print_mat(rowsA, colsA, A);
+            //print_mat(rowsB, colsB, B);
 			break;
 		case 2:
 			n = read_int() - 1; // we count from 1 :)
 			ptr_array[0] = continuous_array;
-			read_int_lines_cont(ptr_array);
+			lines_counter = read_int_lines_cont(ptr_array);
 			write_int_line_cont(ptr_array, n);
+            for(int i = 0; i < lines_counter; i++)
+                free(ptr_array[i]);
 			break;
 		case 3:
 			n = read_int() - 1;
-			read_char_lines(char_lines_array);
+			lines_counter = read_char_lines(char_lines_array);
 			write_char_line(char_lines_array, n);
-			delete_lines(char_lines_array);
+			delete_lines(char_lines_array, lines_counter);
 			break;
 		case 4:
 			n = read_int() - 1;
