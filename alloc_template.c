@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+#include <limits.h>
 
 #define TAB_SIZE  1000
 #define BUF_SIZE  1000
@@ -74,20 +75,21 @@ int read_int_lines_cont(int* ptr_array[])
 {
     int *line = malloc(sizeof(int) * TAB_SIZE);
     fill_int_array(line, TAB_SIZE, INT_MAX);
-    int i = 0, j = 0, value = 0;
+    int i = 0, j = 0, value = 0, sign = 1;
     char c = fgetc(stdin);
 
     while(c != EOF)
     {
         if(c == '\n')
         {
-            line[j] = value;
+            line[j] = value*sign;
             ptr_array[i] = line;
             line = malloc(sizeof(int) * TAB_SIZE);
             fill_int_array(line, TAB_SIZE, INT_MAX);
             i++;
             j = 0;
             value = 0;
+            sign = 1;
         }
         if(c >= '0' && c <= '9')
         {
@@ -95,10 +97,13 @@ int read_int_lines_cont(int* ptr_array[])
         }
         else if(c == ' ')
         {
-            line[j] = value;
+            line[j] = value*sign;
             j++;
+            sign = 1;
             value = 0;
         }
+        else if(c == '-')
+            sign = -1;
         c = fgetc(stdin);
     }
 
@@ -121,21 +126,23 @@ void write_int_line_cont(int *ptr_array[], int n)
 int read_char_lines(char *array[])
 {
     char *line = calloc(sizeof(char ) * TAB_SIZE, sizeof(char));
-    int i = 0, j = 0, value = 0;
+    int i = 0, j = 0;
     char c = fgetc(stdin);
 
     while(c != EOF)
     {
         if(c == '\n')
         {
-            line[j] = value;
             array[i] = line;
             line = calloc(sizeof(char) * TAB_SIZE, sizeof(char));
             i++;
             j = 0;
         }
-        line[j] = c;
-        j++;
+        else
+        {
+            line[j] = c;
+            j++;
+        }
         c = fgetc(stdin);
     }
 
@@ -144,12 +151,7 @@ int read_char_lines(char *array[])
 
 void write_char_line(char *array[], int n)
 {
-    for(int i = 0; i < TAB_SIZE; i++)
-    {
-        if(array[n][i] == '\0')
-            return;
-        printf("%c", array[n][i]);
-    }
+    printf("%s \n", array[n]);
 }
 
 void delete_lines(char *array[], int n)
@@ -169,21 +171,73 @@ typedef struct {
 
 int read_int_lines(line_type lines_array[])
 {
-    return 0;
+    int *line = malloc(sizeof(int) * TAB_SIZE);
+    fill_int_array(line, TAB_SIZE, INT_MAX);
+    int i = 0, j = 0, value = 0, sign = 1;
+    char c = fgetc(stdin);
+
+    while(c != EOF)
+    {
+        if(c == '\n')
+        {
+            line[j] = value*sign;
+            lines_array[i].values = line;
+            lines_array[i].len = j+1;
+            for(int k = 0; k <= j; k++)
+                lines_array[i].average += line[k];
+            lines_array[i].average /= j+1;
+            line = malloc(sizeof(int) * TAB_SIZE);
+            fill_int_array(line, TAB_SIZE, INT_MAX);
+            i++;
+            j = 0;
+            value = 0;
+        }
+        if(c >= '0' && c <= '9')
+        {
+            value = value * 10 + (c - '0');
+        }
+        else if(c == ' ')
+        {
+            line[j] = value*sign;
+            j++;
+            sign = 1;
+            value = 0;
+        }
+        else if(c == '-')
+            sign = -1;
+        c = fgetc(stdin);
+    }
+    return i;
 }
 
-void write_int_line(line_type lines_array[], int n) {
+void write_int_line(line_type lines_array[], int n)
+{
+    for(int i = 0; i < lines_array[n].len; i++)
+        printf("%d ", lines_array[n].values[i]);
+    printf("\n%.2f", lines_array[n].average);
 }
 
-void delete_int_lines(line_type array[], int line_count) {
+void delete_int_lines(line_type array[], int line_count)
+{
+    for(int i = 0; i < line_count; i++)
+        free(array[i].values);
 }
 
 int cmp (const void *a, const void *b)
 {
+    line_type *A = (line_type *)a;
+    line_type *B = (line_type *)b;
+
+    if(A->average > B->average)
+        return 1;
+    else if(A->average < B->average)
+        return -1;
     return 0;
 }
 
-void sort_by_average(line_type lines_array[], int line_count) {
+void sort_by_average(line_type lines_array[], int line_count)
+{
+    qsort(lines_array, line_count, sizeof(line_type), cmp);
 }
 
 // 5
@@ -195,25 +249,68 @@ typedef struct {
 
 int read_sparse(triplet* triplet_array, int n_triplets)
 {
-    return 0;
+    for(int i = 0; i < n_triplets; i++)
+        scanf("%d %d %d", &triplet_array[i].r, &triplet_array[i].c, &triplet_array[i].v);
+
+    return n_triplets;
 }
 
 int cmp_triplets(const void* t1, const void* t2)
 {
+    triplet *a = (triplet *)t1;
+    triplet *b = (triplet *)t2;
+
+    if(a->r > b->r)
+        return 1;
+    else if(a->r < b->r)
+        return -1;
+    else
+    {
+        if(a->c > b->c)
+            return 1;
+        else if(a->c < b->c)
+            return -1;
+    }
     return 0;
 }
 
-void make_CSR(triplet* triplet_array, int n_triplets, int rows, int* V, int* C, int* R) {
+void make_CSR(triplet* triplet_array, int n_triplets, int rows, int* V, int* C, int* R)
+{
+    qsort(triplet_array, n_triplets, sizeof(triplet), cmp_triplets);
+
+    memset(R, 0, sizeof(int) * (rows+1));
+
+    for(int i = 0; i < n_triplets; i++)
+    {
+        V[i] = triplet_array[i].v;
+        C[i] = triplet_array[i].c;
+        for(int j = triplet_array[i].r+1; j < rows+1; j++)
+            R[j]++;
+    }
 }
 
-void multiply_by_vector(int rows, const int* V, const int* C, const int* R,
-						const int* x, int* y) {
+void multiply_by_vector(int rows, const int* V, const int* C, const int* R, const int* x, int* y)
+{
+    for(int i = 0; i < rows; i++)
+    {
+        y[i] = 0;
+        for(int j = R[i]; j < R[i+1]; j++)
+            y[i] += V[j] * x[C[j]];
+    }
 }
 
-void read_vector(int* v, int n) {
+void read_vector(int* v, int n)
+{
+    for(int i = 0; i < n; i++)
+        scanf("%d", &v[i]);
 }
 
-void write_vector(int* v, int n) {
+void write_vector(int* v, int n)
+{
+    for(int i = 0; i < n; i++)
+        printf("%d ", v[i]);
+
+    printf("\n");
 }
 
 // auxiliary
@@ -288,4 +385,3 @@ int main(void) {
 	}
 	return 0;
 }
-
