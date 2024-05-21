@@ -52,13 +52,13 @@ void reserve(Vector *vector, size_t new_capacity)
 // additional zero-initialized elements are appended
 void resize(Vector *vector, size_t new_size)
 {
-    if(vector->capacity > new_size)
-        return;
+    if(new_size > vector->capacity)
+        reserve(vector, vector->capacity*2);
 
     if(vector->size < new_size)
-        memset((char *)(vector->data)+(vector->size*vector->element_size), 0, new_size-vector->size);
+        memset((char *)(vector->data)+(vector->size*vector->element_size), 0, (new_size-vector->size)*vector->element_size);
     else if(vector->size > new_size)
-        memset((char *)(vector->data)+(new_size*vector->element_size), 0, vector->size-new_size);
+        memset((char *)(vector->data)+(new_size*vector->element_size), 0, (vector->size-new_size)*vector->element_size);
 
     vector->size = new_size;
 }
@@ -69,9 +69,12 @@ void push_back(Vector *vector, void *value)
     if(vector == NULL)
         return;
     if(vector->size + 1 > vector->capacity)
-        return;
+    {
+        vector->capacity *= 2;
+        vector->data = realloc(vector->data, vector->capacity * vector->element_size);
+    }
 
-    memmove((char *)(vector->data)+(vector->size)*vector->element_size, value, vector->element_size);
+    memcpy((char *)(vector->data)+(vector->size)*vector->element_size, value, vector->element_size);
     vector->size += 1;
 }
 
@@ -90,11 +93,11 @@ void insert(Vector *vector, size_t index, void *value)
 {
     if(vector == NULL)
         return;
-    if(vector->size+1 > vector->capacity || index > vector->size)
-        return;
+    if(vector->size == vector->capacity)
+        reserve(vector, vector->capacity*2);
 
-    memcpy((char *)(vector->data)+((index+1)*vector->element_size), (char *)(vector->data)+(index*vector->element_size), vector->size-index);
-    memmove((char *)(vector->data)+(index*vector->element_size), value, vector->element_size);
+    memmove((char *)(vector->data)+((index+1)*vector->element_size), (char *)(vector->data)+(index*vector->element_size), (vector->size-index)*vector->element_size);
+    memcpy((char *)(vector->data)+(index*vector->element_size), value, vector->element_size);
     vector->size += 1;
 }
 
@@ -106,7 +109,7 @@ void erase(Vector *vector, size_t index)
     if(index > vector->size)
         return;
 
-    memcpy((char *)(vector->data)+((index)*vector->element_size), (char *)(vector->data)+((index+1)*vector->element_size), vector->size-index);
+    memmove((char *)(vector->data)+((index)*vector->element_size), (char *)(vector->data)+((index+1)*vector->element_size), (vector->size-index)*vector->element_size);
     vector->size -= 1;
 }
 
@@ -121,6 +124,7 @@ void erase_value(Vector *vector, void *value, cmp_ptr cmp)
         if(cmp((char *)(vector->data)+i*vector->element_size, value) == 0)
         {
             erase(vector, i);
+            i -= 1;
         }
     }
 }
@@ -136,6 +140,7 @@ void erase_if(Vector *vector, int (*predicate)(void *))
         if(predicate((char *)(vector->data)+(i*vector->element_size)) == 0)
         {
             erase(vector, i);
+            i -= 1;
         }
     }
 }
@@ -147,6 +152,7 @@ void shrink_to_fit(Vector *vector)
         return;
 
     vector->data = realloc(vector->data, vector->element_size * vector->size);
+    vector->capacity = vector->size;
 }
 
 // ---------------------------------------------------
@@ -167,7 +173,10 @@ void print_char(const void *v)
     printf("%c ", *(char *)v);
 }
 
-void print_person(const void *v) {
+void print_person(const void *v)
+{
+    Person p = *(Person *)v;
+    printf("%d %s %s\n", p.age, p.first_name, p.last_name);
 }
 
 void print_vector(Vector *vector, print_ptr print)
@@ -175,6 +184,7 @@ void print_vector(Vector *vector, print_ptr print)
     if(vector == NULL)
         return;
 
+    printf("%zu\n", vector->capacity);
     for(size_t i = 0; i < vector->size; i++)
     {
         print((char *)(vector->data) + (i * vector->element_size));
@@ -197,7 +207,23 @@ int char_cmp(const void *v1, const void *v2)
     return a-b;
 }
 
-int person_cmp(const void *p1, const void *p2) {
+int person_cmp(const void *p1, const void *p2)
+{
+    Person *a = (Person *)p1;
+    Person *b = (Person *)p2;
+
+    if(a->age > b->age)
+        return -1;
+    else if(a->age < b->age)
+        return 1;
+    else
+    {
+        int firstNameRes = strcmp(a->first_name, b->first_name);
+        if(firstNameRes == 0)
+            return strcmp(a->last_name, b->last_name);
+        else
+            return firstNameRes;
+    }
 }
 
 int is_even(void *value)
@@ -210,12 +236,17 @@ int is_even(void *value)
 int is_vowel(void *value)
 {
     char c = *(char *)value;
-    if(c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u')
+    if(c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u' || c == 'y' || c == 'A' || c == 'E' || c == 'I' || c == 'O' || c == 'U' || c == 'Y')
         return 0;
     return 1;
 }
 
-int is_older_than_25(void *person) {
+int is_older_than_25(void *person)
+{
+    Person *p = (Person *)person;
+    if(p->age > 25)
+        return 0;
+    return 1;
 }
 
 void read_int(void* value)
@@ -225,12 +256,13 @@ void read_int(void* value)
 
 void read_char(void* value)
 {
-    scanf("%c", (char *)value);
+    scanf(" %c", (char *)value);
 }
 
 void read_person(void* value)
 {
-
+    Person *p = (Person *)value;
+    scanf("%d %s %s", &p->age, p->first_name, p->last_name);
 }
 
 void vector_test(Vector *vector, size_t block_size, size_t elem_size, int n, read_ptr read,
