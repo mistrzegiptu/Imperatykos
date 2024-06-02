@@ -71,7 +71,7 @@ void dump_list_if(List *p_list, void *data)
         return;
 
     ListElement *iter = p_list->head;
-    while(iter != p_list->tail)
+    while(iter != NULL)
     {
         if(p_list->compare_data(iter->data, data) == 0)
             p_list->dump_data(iter->data);
@@ -90,7 +90,7 @@ void free_element(DataFp free_data, ListElement *to_delete)
 void free_list(List* p_list)
 {
     ListElement *iter = p_list->head;
-    while(iter != p_list->tail)
+    while(iter != NULL)
     {
         ListElement *temp = iter;
         iter = iter->next;
@@ -138,7 +138,9 @@ void pop_front(List *p_list)
 
     void *temp = p_list->head->next;
 
-    p_list->free_data(p_list->head);
+    p_list->free_data(p_list->head->data);
+    free(p_list->head);
+
     p_list->head = temp;
 }
 
@@ -216,6 +218,7 @@ void insert_in_order(List *p_list, void *p_data)
         {
             if(p_list->modify_data != NULL)
                 p_list->modify_data(insertPos->data);
+            p_list->free_data(p_data);
             free(toInsert);
         }
         else
@@ -303,12 +306,22 @@ void modify_word(void *p)
     dw->counter++;
 }
 
-void *create_data_word(const char *string, int counter)
-{
+void *create_data_word(const char *string, int counter, int lowerCase) {
     DataWord *dw = malloc(sizeof(DataWord));
 
     dw->counter = counter;
     dw->word = strdup(string);
+
+    if (lowerCase)
+    {
+        int i = strlen(string);
+
+        while (i >= 0)
+        {
+            dw->word[i] = (char) tolower(string[i]);
+            i--;
+        }
+    }
 
     return dw;
 }
@@ -317,7 +330,7 @@ void *create_data_word(const char *string, int counter)
 // Order of insertions is given by the last parameter of type CompareDataFp.
 // (comparator function address). If this address is not NULL the element is
 // inserted according to the comparator. Otherwise, read order is preserved.
-void stream_to_list(List *p_list, FILE *stream, CompareDataFp cmp) {
+void stream_to_list(List *p_list, FILE *stream, CompareDataFp cmp, int lowerCase) {
     const char delimits[] = " \r\t\n.,?!:;-";
     char *token, *string = malloc(sizeof(char)*BUFFER_SIZE);
 
@@ -330,7 +343,7 @@ void stream_to_list(List *p_list, FILE *stream, CompareDataFp cmp) {
 
         while(token)
         {
-            void *toAdd = create_data_word(token, 1);
+            void *toAdd = create_data_word(token, 1, lowerCase);
 
             if(cmp)
                 insert_in_order(p_list, toAdd);
@@ -390,14 +403,14 @@ int main(void) {
             break;
         case 2: // read words from text, insert into list, and print
             init_list(&list, dump_word, free_word, NULL, NULL);
-            stream_to_list(&list, stdin, NULL);
+            stream_to_list(&list, stdin, NULL, 0);
             dump_list(&list);
             free_list(&list);
             break;
         case 3: // read words, insert into list alphabetically, print words encountered n times
             scanf("%d",&n);
             init_list(&list, dump_word, free_word, NULL, modify_word);
-            stream_to_list(&list, stdin, cmp_word_alphabet);
+            stream_to_list(&list, stdin, cmp_word_alphabet, 1);
             list.compare_data = cmp_word_counter;
             DataWord data = { NULL, n };
             dump_list_if(&list, &data);
