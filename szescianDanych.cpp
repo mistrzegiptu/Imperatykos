@@ -3,7 +3,7 @@
 using namespace std;
 int det(int matrix[32][32], int size)
 {
-    int sign = 1, prev = 1;
+    int sign = 1;
 
     for(int i = 0; i < size-1; i++)
     {
@@ -12,15 +12,18 @@ int det(int matrix[32][32], int size)
             bool swapped = false;
             for(int j = i + 1; j < size; j++)
             {
-                for(int k = 0; k < size; k++)
+                if(matrix[i][j] != 0)
                 {
-                    int swapper = matrix[j][k];
-                    matrix[j][k] = matrix[i][k];
-                    matrix[i][k] = swapper;
-                    swapped = true;
+                    for (int k = 0; k < size; k++)
+                    {
+                        int swapper = matrix[j][k];
+                        matrix[j][k] = matrix[i][k];
+                        matrix[i][k] = swapper;
+                        swapped = true;
+                    }
+                    sign = -sign;
+                    break;
                 }
-                sign = -sign;
-                break;
             }
             if(!swapped)
                 return 0;
@@ -29,10 +32,11 @@ int det(int matrix[32][32], int size)
         {
             for(int k = i + 1; k < size; k++)
             {
-                matrix[j][k] = (matrix[j][k] * matrix[i][i] - matrix[j][i] * matrix[i][k]) / prev;
+                matrix[j][k] = matrix[j][k] * matrix[i][i] - matrix[j][i] * matrix[i][k];
+                if(i != 0)
+                    matrix[j][k] /= matrix[i-1][i-1];
             }
         }
-        prev = matrix[i][i];
     }
     return sign * matrix[size-1][size-1];
 }
