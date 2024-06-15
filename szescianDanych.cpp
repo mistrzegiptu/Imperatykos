@@ -3,36 +3,34 @@
 using namespace std;
 int det(int matrix[32][32], int size)
 {
-    int determinant = 0;
-    if(size == 1)
-        return matrix[0][0];
-    else if(size == 2)
-        return matrix[0][0]*matrix[1][1] - matrix[0][1]*matrix[1][0];
-    else
+    int sign = 1, prev = 1;
+
+    for(int i = 0; i < size-1; i++)
     {
-        int temp[32][32];
-        for(int index = 0; index < size; index++)
+        if(matrix[i][i] == 0)
         {
-            int x = 0;
-            for (int i = 1; i < size; i++)
+            for(int j = i + 1; j < size; j++)
             {
-                int y = 0;
-                for (int j = 0; j < size; j++)
+                for(int k = 0; k < size; k++)
                 {
-                    if(j == index)
-                        continue;
-                    temp[x][y] = matrix[i][j];
-                    y += 1;
+                    int swapper = matrix[j][k];
+                    matrix[j][k] = matrix[i][k];
+                    matrix[i][k] = swapper;
                 }
-                x += 1;
+                sign = -sign;
+                break;
             }
-            if(index%2 == 0)
-                determinant += matrix[0][index] * det(temp, size-1);
-            else
-                determinant += matrix[0][index] * det(temp, size-1) * (-1);
         }
+        for(int j = i + 1; j < size; j++)
+        {
+            for(int k = i + 1; k < size; k++)
+            {
+                matrix[j][k] = (matrix[j][k] * matrix[i][i] - matrix[j][i] * matrix[i][k]) / prev;
+            }
+        }
+        prev = matrix[i][i];
     }
-    return determinant;
+    return sign * matrix[size-1][size-1];
 }
 int main()
 {
