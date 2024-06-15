@@ -9,23 +9,22 @@ int det(int matrix[32][32], int size)
     {
         if(matrix[i][i] == 0)
         {
-            bool swapped = false;
-            for(int j = i + 1; j < size; j++)
+            int j = 0;
+            for(j = i + 1; j < size; j++)
             {
-                if(matrix[i][j] != 0)
+                if(matrix[j][i] != 0)
                 {
                     for (int k = 0; k < size; k++)
                     {
                         int swapper = matrix[j][k];
                         matrix[j][k] = matrix[i][k];
                         matrix[i][k] = swapper;
-                        swapped = true;
                     }
                     sign = -sign;
                     break;
                 }
             }
-            if(!swapped)
+            if(j == size)
                 return 0;
         }
         for(int j = i + 1; j < size; j++)
