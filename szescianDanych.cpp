@@ -1,9 +1,9 @@
 #include <iostream>
 
 using namespace std;
-int det(long long matrix[32][32], int size)
+long long det(long long matrix[32][32], int size)
 {
-    int sign = 1;
+    long long sign = 1;
     if(size <= 0 || size > 32 || size % 2 == 1)
         return 1;
 
@@ -18,7 +18,7 @@ int det(long long matrix[32][32], int size)
                 {
                     for (int k = 0; k < size; k++)
                     {
-                        int swapper = matrix[j][k];
+                        long long swapper = matrix[j][k];
                         matrix[j][k] = matrix[i][k];
                         matrix[i][k] = swapper;
                     }
