@@ -9,6 +9,7 @@ int det(int matrix[32][32], int size)
     {
         if(matrix[i][i] == 0)
         {
+            bool swapped = false;
             for(int j = i + 1; j < size; j++)
             {
                 for(int k = 0; k < size; k++)
@@ -16,10 +17,13 @@ int det(int matrix[32][32], int size)
                     int swapper = matrix[j][k];
                     matrix[j][k] = matrix[i][k];
                     matrix[i][k] = swapper;
+                    swapped = true;
                 }
                 sign = -sign;
                 break;
             }
+            if(!swapped)
+                return 0;
         }
         for(int j = i + 1; j < size; j++)
         {
