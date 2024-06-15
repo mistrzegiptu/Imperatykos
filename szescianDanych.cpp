@@ -1,9 +1,11 @@
 #include <iostream>
 
 using namespace std;
-int det(int matrix[32][32], int size)
+int det(long long matrix[32][32], int size)
 {
     int sign = 1;
+    if(size <= 0 || size > 32 || size % 2 == 1)
+        return 1;
 
     for(int i = 0; i < size-1; i++)
     {
@@ -169,7 +171,7 @@ int main()
                 char k = 0;
                 int index = 0;
                 cin>>k>>index;
-                int matrix[32][32];
+                long long matrix[32][32];
                 for(int i = 0; i < n; i++)
                 {
                     for(int j = 0; j < n; j++)
