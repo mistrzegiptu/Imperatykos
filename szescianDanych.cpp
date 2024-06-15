@@ -43,7 +43,7 @@ int main()
     for(int i = 0; i < n; i++)
         for (int j = 0; j < n; j++)
             for (int k = 0; k < n; k++)
-                cin>>tab[i][j][k];
+                cin>>tab[j][k][i];
 
     char c = 0;
     cin>>c;
@@ -57,11 +57,11 @@ int main()
                 int l = 0, v = 0, p = 0, h = 0, w = 0, d = 0, dl = 1, dv = 1, dp = 1;
                 cin >> l >> v >> p >> h >> w >> d;
 
-                if(l > (n/2))
+                if(l >= (n/2))
                     dl = -1;
-                if(v > (n/2))
+                if(v >= (n/2))
                     dv = -1;
-                if(p > (n/2))
+                if(p >= (n/2))
                     dp = -1;
 
                 int x = l, y = v, z = p;
@@ -75,7 +75,9 @@ int main()
                         for(int k = 0; k <= d; k++)
                         {
                             if(x >= 0 && x < n && y >= 0 && y < n && z >= 0 && z < n)
+                            {
                                 result += tab[x][y][z];
+                            }
                             z += dp;
                         }
                         y += dv;
